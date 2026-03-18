@@ -60,26 +60,26 @@ impl Keypair {
     }
 
     /// Returns the secret key bytes (32 bytes)
-    #[wasm_bindgen(js_name = secretBytes)]
+    #[wasm_bindgen(getter = secretBytes)]
     pub fn secret_bytes(&self) -> Vec<u8> {
         self.inner.secret_bytes().to_vec()
     }
 
     /// Returns the `SecretKey`
-    #[wasm_bindgen(js_name = secretKey)]
+    #[wasm_bindgen(getter = secretKey)]
     pub fn secret_key(&self) -> SecretKey {
         self.inner.secret_key().into()
     }
 
     /// Returns the `PublicKey`
-    #[wasm_bindgen(js_name = publicKey)]
+    #[wasm_bindgen(getter = publicKey)]
     pub fn public_key(&self) -> PublicKey {
         let pk = lwk_wollet::elements::bitcoin::PublicKey::new(self.inner.public_key());
         pk.into()
     }
 
     /// Returns the x-only public key
-    #[wasm_bindgen(js_name = xOnlyPublicKey)]
+    #[wasm_bindgen(getter = xOnlyPublicKey)]
     pub fn x_only_public_key(&self) -> XOnlyPublicKey {
         let (xonly, _parity) = self.inner.x_only_public_key();
         xonly.into()
@@ -112,7 +112,8 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_keypair() {
-        let bytes = [1u8; 32];
+        let mut bytes = [0x11; 32];
+        bytes[31] = 0x22;
 
         let kp = Keypair::from_secret_bytes(&bytes).unwrap();
         assert_eq!(kp.secret_bytes(), bytes);
@@ -134,7 +135,7 @@ mod tests {
         let sk_extracted = kp.secret_key();
         assert_eq!(sk_extracted.to_bytes(), bytes);
 
-        let msg_hex = "0202020202020202020202020202020202020202020202020202020202020202";
+        let msg_hex = "3333333333333333333333333333333333333333333333333333333333333344";
         let sig_hex = kp.sign_schnorr(msg_hex).unwrap();
         assert_eq!(sig_hex.len(), 128);
 

@@ -374,6 +374,11 @@ impl InvoiceResponse {
         self.inner.claim_txid()
     }
 
+    /// See [`crate::InvoiceResponse::lockup_txid()`]
+    pub fn lockup_txid(&self) -> Option<&str> {
+        self.inner.lockup_txid()
+    }
+
     pub fn advance(&mut self) -> Result<ControlFlow<bool, SwapStatus>, Error> {
         let inner = self.runtime.block_on(self.inner.advance())?;
         Ok(inner)
@@ -393,8 +398,17 @@ impl LockupResponse {
         self.inner.lockup_address()
     }
 
+    pub fn claim_address(&self) -> &str {
+        self.inner.claim_address()
+    }
+
     pub fn expected_amount(&self) -> u64 {
         self.inner.expected_amount()
+    }
+
+    /// See [`crate::LockupResponse::uri()`]
+    pub fn uri(&self) -> Option<&str> {
+        self.inner.uri()
     }
 
     pub fn chain_from(&self) -> Chain {

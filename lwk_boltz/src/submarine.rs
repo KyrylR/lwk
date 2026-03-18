@@ -417,11 +417,37 @@ impl PreparePayResponse {
         let flow = match update_status {
             SwapState::InvoiceSet => Ok(ControlFlow::Continue(update)),
             SwapState::TransactionMempool => {
-                self.data.lockup_txid = update.transaction.as_ref().map(|tx| tx.id.clone());
-                log::info!("transaction.mempool Boltz broadcasted funding tx");
+                let lockup_txid = update.transaction.as_ref().map(|tx| tx.id.clone());
+                log::info!("transaction.mempool Boltz broadcasted funding tx {lockup_txid:?}");
+                self.data.lockup_txid = lockup_txid;
                 Ok(ControlFlow::Continue(update))
             }
-            SwapState::TransactionLockupFailed | SwapState::InvoiceFailedToPay => {
+            SwapState::InvoiceFailedToPay => {
+                log::warn!("invoice.failedToPay Boltz failed to pay the invoice");
+                let addr = self.uri_address()?;
+                let utxo = self
+                    .chain_client
+                    .liquid_client()
+                    .ok_or(Error::MissingLiquidClient)?
+                    .get_address_utxo(&addr)
+                    .await?;
+
+                match utxo {
+                    Some(_) => {
+                        // UTXO exists, make refund transaction
+                        let tx = self.make_refund_tx_with_retry().await?;
+                        let txid = broadcast_tx_with_retry(&self.chain_client, &tx).await?;
+                        log::info!("Cooperative Refund Successfully broadcasted: {txid}");
+                        Ok(ControlFlow::Break(true))
+                    }
+                    None => {
+                        // No UTXO found, funds were not sent, consider the swap failed but completed
+                        log::warn!("No UTXO found at address, invoice payment failed without funds being sent");
+                        Ok(ControlFlow::Break(false))
+                    }
+                }
+            }
+            SwapState::TransactionLockupFailed => {
                 log::warn!("transaction.lockupFailed Boltz failed to lockup funding tx");
                 let tx = self.make_refund_tx_with_retry().await?;
 

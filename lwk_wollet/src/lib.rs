@@ -98,11 +98,13 @@ pub mod clients;
 mod contract;
 mod descriptor;
 mod domain;
+mod elements_wallet;
 mod error;
 mod liquidex;
 mod model;
 mod network;
 pub mod pegin;
+mod tx_details;
 
 #[cfg(feature = "prices")]
 mod pos;
@@ -134,6 +136,7 @@ pub use crate::network::ElementsNetwork;
 pub use crate::pegin::fed_peg_script;
 #[cfg(feature = "registry")]
 pub use crate::registry::RegistryAssetData;
+pub use crate::tx_details::{TxDetails, TxOpt, TxOutDetails, TxsOpt};
 pub use crate::wollet::DirectoryIdHash;
 
 // Re-export store types from lwk_common
